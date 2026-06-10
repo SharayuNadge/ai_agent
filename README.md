@@ -29,3 +29,7 @@ A research agent that autonomously searches the web, reads pages, and summarises
 | Brain (LLM) | Groq API connection with tool awareness | ✅ Done |
 | Agent Loop | ReAct loop — Reason, Act, Observe with 10 step limit | ✅ Done |
 | System Prompt | Strict format enforcement for TOOL and FINAL responses | ✅ Done |
+| Flask app.py | SSE streaming server with /research and /stream routes | ✅ Done |
+| index.html UI | Live step feed, formatted final answer, SSE client | ✅ Done |
+| LM Studio integration | Switched to local model for zero-cost testing | ✅ Done |
+| Bug fixes | 415 error, SSE newline handling, startsWith typo, port conflict | ✅ Done |
