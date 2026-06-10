@@ -25,5 +25,7 @@ A research agent that autonomously searches the web, reads pages, and summarises
 | Project setup | venv, .env, .gitignore | ✅ Done |
 | search_web tool | DuckDuckGo search returning top 3 results | ✅ Done |
 | read_page tool | Fetches and strips HTML from a URL | ✅ Done |
-| Brain (LLM) | Groq API connection with tool awareness | ⏳ Pending |
-| Agent Loop | ReAct loop — Reason, Act, Observe | ⏳ Pending |
+| Error handling | try-except in read_page — agent survives unreachable URLs | ✅ Done |
+| Brain (LLM) | Groq API connection with tool awareness | ✅ Done |
+| Agent Loop | ReAct loop — Reason, Act, Observe with 10 step limit | ✅ Done |
+| System Prompt | Strict format enforcement for TOOL and FINAL responses | ✅ Done |
