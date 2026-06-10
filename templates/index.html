@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>AI Research Agent</title>
+        <style>
+            body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
+            h1 { color: #333; }
+            input[type="text"] { width: 70%; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
+            button { padding: 10px 20px; font-size: 16px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
+            button:hover { background: #45a049; }
+            #steps { margin-top: 20px; padding: 15px; background: white; border-radius: 4px; min-height: 100px; border: 1px solid #ddd; }
+            #result { margin-top: 20px; padding: 15px; background: #e8f5e9; border-radius: 4px; display: none; border: 1px solid #4CAF50; }
+            .step { padding: 5px 0; color: #555; border-bottom: 1px solid #eee; }
+            .answer { white-space: pre-wrap; word-wrap: break-word; line-height: 1.6; }
+        </style>
+    </head>
+    <body>
+        <h1>🔍 AI Research Agent</h1>
+        <p>Ask me anything - I'll search the web and compile a research report for you.</p>
+
+        <input type="text" id="goal" placeholder="What do you want to research?" />
+        <button onclick="startResearch()">Research</button>
+
+        <div id="steps"><em>Steps will appear here...</em></div>
+        <div id="result"></div>
+
+        <script>
+            function startResearch() {
+                const goal = document.getElementById("goal").value;
+                if(!goal) return;
+
+                document.getElementById("steps").innerHTML = "";
+                document.getElementById("result").style.display = "none";
+                document.getElementById("result").innerHTML = "";
+
+                fetch("/research", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json"},
+                    body: JSON.stringify({goal: goal})
+                }).then(() => {
+                    const source = new EventSource("/stream");
+
+                    source.onmessage = function(event) {
+                        const data = event.data;
+
+                        if (data.startsWith("FINAL:")) {
+                            const answer = data.slice(6).trim();
+                            const resultDiv = document.getElementById("result");
+                            resultDiv.style.display = "block";
+                            resultDiv.innerHTML = "<h2>Research Complete</h2><div class='answer'>" + answer + "</div>";
+                            source.close();
+                        } else {
+                            const stepsDiv = document.getElementById("steps");
+                            stepsDiv.innerHTML += "<div class ='step'>" + data + "</div>";
+                        }
+                    };
+                });
+
+            }
+        </script>
+    </body>
+</html>
