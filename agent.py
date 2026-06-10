@@ -22,6 +22,7 @@ SYSTEM_PROMPT = """You are a research agent. You have access to two tools:
                 - Use read_page to dig deeper into promising results
                 - Never make up information. Only use what the tools return
                 - Always end with FINAL when you have enough information
+                - Your FINAL answer must be structured with clear headings and bullet points. Never write a wall of text. Make it skimmable.
                 - CRITICAL: Your response must ALWAYS start with either TOOL: or FINAL: - no exceptions. Never add explanations or commentary before these keywords.
                   """
 
@@ -61,15 +62,13 @@ def run_agent(goal):
     ]
 
     for i in range(10):
-        print(f"\n--- Step {i+1}")
+        yield f"Step {i+1}: Thinking..."
         response = call_llm(messages)
-        print(response)
 
         messages.append({"role": "assistant", "content": response})
 
         if response.startswith("FINAL:"):
-            print("\n=== AGENT COMPLETE ===")
-            print(response[6:].strip())
+            yield f"FINAL:{response[6:].strip()}"
             break
 
         elif response.startswith("TOOL:"):
@@ -78,8 +77,10 @@ def run_agent(goal):
             tool_input = lines[1].replace("INPUT:", "").strip()
 
             if tool_name == "search_web":
+                yield f"🔍 Searching the web for: {tool_input}"
                 result = search_web(tool_input)
             elif tool_name == "read_page":
+                yield f"📄 Reading page: {tool_input}"
                 result = read_page(tool_input)
             else:
                 result = "Unknown tool requested"
@@ -91,4 +92,10 @@ def run_agent(goal):
             break
 
 if __name__ == "__main__":
-    run_agent("Find the best AI tools for HR teams in the UAE")
+    goal = input("What do you want the agent to research? ")
+    for update in run_agent(goal):
+        if update.startswith("FINAL:"):
+            print("\n=== Research Complete ===")
+            print(update[6:].strip())
+        else:
+            print(update)
