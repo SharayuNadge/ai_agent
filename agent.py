@@ -3,8 +3,36 @@ import os
 from dotenv import load_dotenv
 import requests
 from bs4 import BeautifulSoup
+from groq import Groq
 
 load_dotenv()
+
+SYSTEM_PROMPT = """You are a research agent. You have access to two tools:
+                1. search_web(query) - searches the web and returns top 3 results with title, url and snippet
+                2. read_page(url) - fetches and returns the text content of a webpage
+                To use a tool, respond in EXACTLY this format:
+                TOOL: tool_name
+                INPUT: your_input
+                
+                When you have enough information to answer the goal, respond in EXACTLY this format:
+                FINAL: your comprehensive answer is here
+                
+                Rules:
+                - Use search_web first to find relevant URLs
+                - Use read_page to dig deeper into promising results
+                - Never make up information. Only use what the tools return
+                - Always end with FINAL when you have enough information
+                - CRITICAL: Your response must ALWAYS start with either TOOL: or FINAL: - no exceptions. Never add explanations or commentary before these keywords.
+                  """
+
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+def call_llm(messages):
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages = messages
+    )
+    return response.choices[0].message.content
 
 def search_web(query):
     results = []
@@ -18,17 +46,49 @@ def search_web(query):
     return results
 
 def read_page(url):
-    response = requests.get(url, timeout=10)
-    soup = BeautifulSoup(response.text, "html.parser")
-    text = soup.get_text(separator=" ", strip=True)
-    return text[:2000]
+    try:
+        response = requests.get(url, timeout=10)
+        soup = BeautifulSoup(response.text, "html.parser")
+        text = soup.get_text(separator=" ", strip=True)
+        return text[:2000]
+    except Exception as e:
+        return f"Could not read page {str(e)}"
+
+def run_agent(goal):
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": goal}
+    ]
+
+    for i in range(10):
+        print(f"\n--- Step {i+1}")
+        response = call_llm(messages)
+        print(response)
+
+        messages.append({"role": "assistant", "content": response})
+
+        if response.startswith("FINAL:"):
+            print("\n=== AGENT COMPLETE ===")
+            print(response[6:].strip())
+            break
+
+        elif response.startswith("TOOL:"):
+            lines = response.strip().split("\n")
+            tool_name = lines[0].replace("TOOL:", "").strip()
+            tool_input = lines[1].replace("INPUT:", "").strip()
+
+            if tool_name == "search_web":
+                result = search_web(tool_input)
+            elif tool_name == "read_page":
+                result = read_page(tool_input)
+            else:
+                result = "Unknown tool requested"
+            
+            messages.append({"role": "user", "content": f"TOOL RESULT:\n{result}"})
+
+        else:
+            print("Unexpected response format. Stopping")
+            break
 
 if __name__ == "__main__":
-    results = search_web("AI tools for HR teams in UAE")
-    for r in results:
-        print(r)
-
-    first_url = results[0]["url"]
-    print("\nReading first resulti...")
-    page_text = read_page(first_url)
-    print(page_text)
+    run_agent("Find the best AI tools for HR teams in the UAE")
