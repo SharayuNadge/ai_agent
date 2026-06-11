@@ -12,6 +12,9 @@ A research agent that autonomously searches the web, reads pages, and summarises
 - BeautifulSoup4
 - Requests
 
+## Live Demo
+https://ai-agent-xg0i.onrender.com
+
 ## Progress
 
 | Week | Topic | Status |
@@ -33,3 +36,4 @@ A research agent that autonomously searches the web, reads pages, and summarises
 | index.html UI | Live step feed, formatted final answer, SSE client | ✅ Done |
 | LM Studio integration | Switched to local model for zero-cost testing | ✅ Done |
 | Bug fixes | 415 error, SSE newline handling, startsWith typo, port conflict | ✅ Done |
+| Deployment | Live on Render at https://ai-agent-xg0i.onrender.com | ✅ Done |
