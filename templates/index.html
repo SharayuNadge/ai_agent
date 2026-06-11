@@ -1,64 +1,393 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>AI Research Agent</title>
-        <style>
-            body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
-            h1 { color: #333; }
-            input[type="text"] { width: 70%; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
-            button { padding: 10px 20px; font-size: 16px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
-            button:hover { background: #45a049; }
-            #steps { margin-top: 20px; padding: 15px; background: white; border-radius: 4px; min-height: 100px; border: 1px solid #ddd; }
-            #result { margin-top: 20px; padding: 15px; background: #e8f5e9; border-radius: 4px; display: none; border: 1px solid #4CAF50; }
-            .step { padding: 5px 0; color: #555; border-bottom: 1px solid #eee; }
-            .answer { white-space: pre-wrap; word-wrap: break-word; line-height: 1.6; }
-        </style>
-    </head>
-    <body>
-        <h1>🔍 AI Research Agent</h1>
-        <p>Ask me anything - I'll search the web and compile a research report for you.</p>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Research Agent</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        <input type="text" id="goal" placeholder="What do you want to research?" />
-        <button onclick="startResearch()">Research</button>
+        :root[data-theme="dark"] {
+            --bg-page: #0D1117;
+            --bg-panel: #161B22;
+            --bg-input: #161B22;
+            --border: #21262D;
+            --border-input: #30363D;
+            --text-primary: #E6EDF3;
+            --text-secondary: #8B949E;
+            --text-muted: #484F58;
+            --accent: #F59E0B;
+            --accent-hover: #FBBF24;
+            --success: #3FB950;
+            --btn-text: #0D1117;
+        }
 
-        <div id="steps"><em>Steps will appear here...</em></div>
-        <div id="result"></div>
+        :root[data-theme="light"] {
+            --bg-page: #F6F8FA;
+            --bg-panel: #FFFFFF;
+            --bg-input: #FFFFFF;
+            --border: #D0D7DE;
+            --border-input: #D0D7DE;
+            --text-primary: #1F2328;
+            --text-secondary: #57606A;
+            --text-muted: #8C959F;
+            --accent: #D97706;
+            --accent-hover: #B45309;
+            --success: #1A7F37;
+            --btn-text: #FFFFFF;
+        }
 
-        <script>
-            function startResearch() {
-                const goal = document.getElementById("goal").value;
-                if(!goal) return;
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-page);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 48px 24px;
+            transition: background 0.2s, color 0.2s;
+        }
 
-                document.getElementById("steps").innerHTML = "";
-                document.getElementById("result").style.display = "none";
-                document.getElementById("result").innerHTML = "";
+        .container { max-width: 780px; margin: 0 auto; }
 
-                fetch("/research", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json"},
-                    body: JSON.stringify({goal: goal})
-                }).then(() => {
-                    const source = new EventSource("/stream");
+        .topbar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 40px;
+        }
 
-                    source.onmessage = function(event) {
-                        const data = event.data;
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            cursor: pointer;
+            background: none;
+            border: 1px solid var(--border-input);
+            border-radius: 6px;
+            padding: 6px 14px;
+            transition: color 0.2s, border-color 0.2s;
+            height: auto;
+        }
 
-                        if (data.startsWith("FINAL:")) {
-                            const answer = data.slice(6).trim();
-                            const resultDiv = document.getElementById("result");
-                            resultDiv.style.display = "block";
-                            resultDiv.innerHTML = "<h2>Research Complete</h2><div class='answer'>" + answer + "</div>";
-                            source.close();
-                        } else {
-                            const stepsDiv = document.getElementById("steps");
-                            stepsDiv.innerHTML += "<div class ='step'>" + data + "</div>";
-                        }
-                    };
-                });
+        .theme-toggle:hover { color: var(--text-secondary); border-color: var(--accent); }
 
-            }
-        </script>
-    </body>
+        .header { margin-bottom: 40px; }
+
+        .eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.15em;
+            color: var(--accent);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: 600;
+            line-height: 1.15;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        h1 span { color: var(--accent); }
+
+        .subtitle {
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 32px;
+            align-items: stretch;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            height: 52px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-input);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            padding: 0 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]::placeholder { color: var(--text-muted); }
+        input[type="text"]:focus { border-color: var(--accent); }
+
+        button.research-btn {
+            height: 52px;
+            padding: 0 28px;
+            background: var(--accent);
+            color: var(--btn-text);
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.2s, transform 0.1s;
+            letter-spacing: 0.02em;
+        }
+
+        button.research-btn:hover { background: var(--accent-hover); }
+        button.research-btn:active { transform: scale(0.98); }
+        button.research-btn:disabled { background: var(--border-input); color: var(--text-muted); cursor: not-allowed; transform: none; }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            flex: 1;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border-input);
+        }
+
+        .status-dot.active {
+            background: var(--accent);
+            animation: pulse 1.2s ease-in-out infinite;
+        }
+
+        .status-dot.done { background: var(--success); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .steps-body {
+            padding: 16px 20px;
+            min-height: 80px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        .step-line {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            padding: 3px 0;
+        }
+
+        .step-line .marker { color: var(--accent); min-width: 12px; font-size: 10px; }
+        .step-line .text { color: var(--text-secondary); }
+        .step-line .text.thinking { color: var(--text-muted); font-style: italic; }
+
+        .empty-state { color: var(--text-muted); font-style: italic; padding: 8px 0; }
+
+        .result-body { padding: 24px 28px; display: none; }
+        .result-body.visible { display: block; }
+
+        .result-body h2 {
+            color: var(--text-primary);
+            font-size: 16px;
+            font-weight: 600;
+            margin: 24px 0 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .result-body h2:first-child { margin-top: 0; }
+        .result-body h3 { color: var(--text-primary); font-size: 15px; font-weight: 500; margin: 16px 0 6px; }
+
+        .result-body ul { padding-left: 0; margin-bottom: 14px; list-style: none; }
+
+        .result-body li {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.75;
+            margin-bottom: 8px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .result-body li::before { content: '›'; color: var(--accent); font-family: 'JetBrains Mono', monospace; flex-shrink: 0; }
+
+        .result-body strong { color: var(--text-primary); font-weight: 500; }
+        .result-body p { color: var(--text-secondary); font-size: 14px; line-height: 1.7; margin-bottom: 12px; }
+
+        .complete-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--success);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .complete-badge::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <div class="topbar">
+            <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀ Light mode</button>
+        </div>
+
+        <div class="header">
+            <div class="eyebrow">Autonomous Research Agent</div>
+            <h1>Ask anything.<br><span>Get a research report.</span></h1>
+            <p class="subtitle">The agent searches the web, reads sources, and compiles structured findings — without you lifting a finger.</p>
+        </div>
+
+        <div class="input-row">
+            <input type="text" id="goal" placeholder="e.g. Best AI tools for HR teams in UAE" />
+            <button class="research-btn" id="researchBtn" onclick="startResearch()">Research →</button>
+        </div>
+
+        <div class="panel" id="stepsPanel">
+            <div class="panel-header">
+                <span class="panel-label">Agent activity</span>
+                <div class="status-dot" id="statusDot"></div>
+            </div>
+            <div class="steps-body" id="steps">
+                <div class="empty-state">Waiting for a research goal...</div>
+            </div>
+        </div>
+
+        <div class="panel" id="resultPanel" style="display:none;">
+            <div class="panel-header">
+                <span class="panel-label">Research output</span>
+                <span class="complete-badge">Complete</span>
+            </div>
+            <div class="result-body visible" id="result"></div>
+        </div>
+
+    </div>
+
+<script>
+        const html = document.documentElement;
+
+        const saved = localStorage.getItem("theme") || "dark";
+        html.setAttribute("data-theme", saved);
+        updateToggleLabel(saved);
+
+        function toggleTheme() {
+            const current = html.getAttribute("data-theme");
+            const next = current === "dark" ? "light" : "dark";
+            html.setAttribute("data-theme", next);
+            localStorage.setItem("theme", next);
+            updateToggleLabel(next);
+        }
+
+        function updateToggleLabel(theme) {
+            document.getElementById("themeBtn").textContent = theme === "dark" ? "☀ Light mode" : "☾ Dark mode";
+        }
+
+        function markdownToHtml(text) {
+            return text
+                .replace(/### (.+)/g, '<h3>$1</h3>')
+                .replace(/## (.+)/g, '<h2>$1</h2>')
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/^\* (.+)/gm, '<li>$1</li>')
+                .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+                .replace(/\n\n/g, '</p><p>')
+                .trim();
+        }
+
+        function startResearch() {
+            const goal = document.getElementById("goal").value.trim();
+            if (!goal) return;
+
+            const btn = document.getElementById("researchBtn");
+            const stepsDiv = document.getElementById("steps");
+            const statusDot = document.getElementById("statusDot");
+            const resultPanel = document.getElementById("resultPanel");
+            const resultDiv = document.getElementById("result");
+
+            btn.disabled = true;
+            btn.textContent = "Researching...";
+            stepsDiv.innerHTML = "";
+            statusDot.className = "status-dot active";
+            resultPanel.style.display = "none";
+            resultDiv.innerHTML = "";
+
+            fetch("/research", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ goal: goal })
+            }).then(() => {
+                const source = new EventSource("/stream");
+
+                source.onmessage = function(event) {
+                    const data = event.data;
+
+                    if (data.startsWith("FINAL:")) {
+                        const answer = data.slice(6).trim();
+                        const cleaned = answer.replace(/<br>/g, '\n');
+                        resultDiv.innerHTML = markdownToHtml(cleaned);
+                        resultPanel.style.display = "block";
+                        statusDot.className = "status-dot done";
+                        btn.disabled = false;
+                        btn.textContent = "Research →";
+                        source.close();
+                    } else {
+                        const line = document.createElement("div");
+                        line.className = "step-line";
+                        const isThinking = data.includes("Thinking");
+                        line.innerHTML = `<span class="marker">›</span><span class="text ${isThinking ? 'thinking' : ''}">${data}</span>`;
+                        stepsDiv.appendChild(line);
+                    }
+                };
+
+                source.onerror = function() {
+                    statusDot.className = "status-dot";
+                    btn.disabled = false;
+                    btn.textContent = "Research →";
+                    source.close();
+                };
+            });
+        }
+
+        document.getElementById("goal").addEventListener("keydown", function(e) {
+            if (e.key === "Enter") startResearch();
+        });
+    </script>
+
+</body>
 </html>
