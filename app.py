@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, Response, stream_with_context
 from agent import run_agent
+import os
 
 app = Flask(__name__)
 
@@ -25,4 +26,5 @@ def stream():
     return Response(stream_with_context(generate()), mimetype="text/event-stream")
     
 if __name__ == "__main__":
-    app.run(debug=True, port=8080)
+    #app.run(debug=True, port=8080)
+    app.run(debug=False, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))

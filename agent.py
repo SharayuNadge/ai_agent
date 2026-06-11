@@ -26,15 +26,15 @@ SYSTEM_PROMPT = """You are a research agent. You have access to two tools:
                 - CRITICAL: Your response must ALWAYS start with either TOOL: or FINAL: - no exceptions. Never add explanations or commentary before these keywords.
                   """
 
-#client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-from openai import OpenAI
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-client = OpenAI(base_url="http://127.0.0.1:1234/v1", api_key="lm-studio")
+# from openai import OpenAI
+# client = OpenAI(base_url="http://127.0.0.1:1234/v1", api_key="lm-studio")
 
 def call_llm(messages):
     response = client.chat.completions.create(
-        #model="llama-3.3-70b-versatile",
-        model="google/gemma-4-e4b",
+        model="llama-3.3-70b-versatile",
+        #model="google/gemma-4-e4b",
         messages = messages
     )
     return response.choices[0].message.content
