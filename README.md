@@ -13,13 +13,15 @@ A research agent that autonomously searches the web, reads pages, and summarises
 - Requests
 
 ## Live Demo
-https://ai-agent-xg0i.onrender.com
+[Try the app on Render](https://ai-agent-xg0i.onrender.com)
+
+> Note: The app may take a few seconds to wake up if it hasn't been visited recently.
 
 ## Progress
 
 | Week | Topic | Status |
 |------|-------|--------|
-| Week 7 | AI Agent — Tool Building | ✅ In Progress |
+| Week 7 | AI Agent — Tool Building | ✅ Complete |
 
 ## Milestones
 
